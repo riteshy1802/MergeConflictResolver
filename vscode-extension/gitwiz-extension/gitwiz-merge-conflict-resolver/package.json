@@ -1,0 +1,50 @@
+{
+  "name": "gitwiz-merge-conflict-resolver",
+  "displayName": "gitwiz-merge-conflict-resolver",
+  "description": "VS Code extension to help resolve merge conflicts",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:mergeconflictresolver.showSidebar",
+    "onCommand:mergeconflictresolver.showFullView",
+    "onCommand:mergeconflictresolver.test"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mergeconflictresolver.showSidebar",
+        "title": "Show Merge Conflict Resolver Sidebar"
+      },
+      {
+        "command": "mergeconflictresolver.showFullView",
+        "title": "Show Merge Conflict Resolver Full View"
+      },
+      {
+        "command": "mergeconflictresolver.test",
+        "title": "Test Merge Conflict Resolver"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.99.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.23.0"
+  },
+  "dependencies": {
+    "axios": "^1.8.4"
+  }
+}

@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+::-webkit-scrollbar {
+    width: 4px;        /* width of vertical scrollbar */
+    height: 4px;       /* height of horizontal scrollbar */
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;  /* or a subtle color if you want */
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2); /* light thumb for dark backgrounds */
+    border-radius: 10px;
+  }
+  
+  /* Firefox support */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+  
