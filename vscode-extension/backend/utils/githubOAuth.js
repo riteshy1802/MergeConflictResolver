@@ -1,24 +1,26 @@
 const axios = require('axios');
-const client_id = process.env.GITHUB_CLIENT_ID;
-const client_secret = process.env.GITHUB_CLIENT_SECRET;
 
-const exchangeCodeForToken = async (code) => {
-    try {
-        const config = {
-            headers: {
-              Accept: 'application/json',
-            },
-        }
-        const response = await axios.post('https://github.com/login/oauth/access_token', {
-            client_id,
-            client_secret,
-            code: code,
-            redirect_uri: 'http://localhost:3000/auth/github/callback'
-          }, config);
-        return response.data.access_token;
-    } catch (error) {
-        console.log("Some Error occured while exchanging code for token", error);
-    }
+async function exchangeCodeForToken(code) {
+  try {
+    const response = await axios.post('https://github.com/login/oauth/access_token', null, {
+      params: {
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code: code,
+        redirect_uri: process.env.REDIRECT_URI,
+      },
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    console.log('GitHub OAuth response:', response.data);
+
+    return response.data.access_token;
+  } catch (error) {
+    console.error("Error exchanging code for token:", error.response?.data || error.message);
+    throw new Error("Error exchanging code for token");
+  }
 }
 
-module.exports = exchangeCodeForToken;
+module.exports = { exchangeCodeForToken };

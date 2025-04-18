@@ -74,7 +74,6 @@ export function SidebarView() {
   const totalConflicts = 7 // Total conflict zones across all files
 
   return (
-    // Add h-screen to ensure full viewport height
     <div className="flex flex-col border-r-2 border-[#3c3c3c] h-screen bg-[#24292e] text-[#f5f5f5] w-full overflow-hidden">
       <div className="p-4 bg-[#2b3137]">
         <div className="flex items-center justify-between">

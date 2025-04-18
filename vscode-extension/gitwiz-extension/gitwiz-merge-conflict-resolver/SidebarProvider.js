@@ -9,10 +9,16 @@ class SidebarProvider {
 
   constructor(context) {
     this.context = context;
+    this.panel = null;
   }
 
   showSidebar() {
-    const panel = vscode.window.createWebviewPanel(
+    if (this.panel) {
+      this.panel.reveal();
+      return;
+    }
+    
+    this.panel = vscode.window.createWebviewPanel(
       SidebarProvider.viewType,
       'Merge Conflict Resolver Sidebar',
       vscode.ViewColumn.Two,
@@ -20,41 +26,88 @@ class SidebarProvider {
         enableScripts: true,
         localResourceRoots: [
           vscode.Uri.file(path.join(this.context.extensionPath, '../../', 'frontend', 'dist'))
-        ]
+        ],
+        retainContextWhenHidden: true
       }
     );
+
+    this.panel.onDidDispose(() => {
+      this.panel = null;
+    });
 
     try {
       const frontendDistPath = path.join(this.context.extensionPath, '../../', 'frontend', 'dist');
       
-      // Check if frontend build exists
       if (!fs.existsSync(frontendDistPath)) {
         console.error(`Frontend dist path does not exist: ${frontendDistPath}`);
-        panel.webview.html = this.getErrorHtml('Frontend build not found. Did you build the frontend?');
+        this.panel.webview.html = this.getErrorHtml('Frontend build not found. Did you build the frontend?');
         return;
       }
 
       const htmlPath = path.join(frontendDistPath, 'index.html');
       
-      // Check if index.html exists
       if (!fs.existsSync(htmlPath)) {
         console.error(`index.html not found at: ${htmlPath}`);
-        panel.webview.html = this.getErrorHtml('index.html not found in frontend build');
+        this.panel.webview.html = this.getErrorHtml('index.html not found in frontend build');
         return;
       }
 
       let html = fs.readFileSync(htmlPath, 'utf8');
 
-      // Fix paths for scripts/styles for VS Code webview
-      html = this.rewriteHtml(html, panel.webview, frontendDistPath);
+      html = this.rewriteHtml(html, this.panel.webview, frontendDistPath);
       
-      panel.webview.html = html;
-      
-      // Handle messages from the webview
-      panel.webview.onDidReceiveMessage(
-        message => {
+      this.panel.webview.html = html;
+
+      this.panel.webview.onDidReceiveMessage(
+        async message => {
           console.log('Received message from webview:', message);
-          // Handle messages from the webview here
+          
+          if (message.type === 'OPEN_EXTERNAL') {
+            try {
+              const requestId = Math.random().toString(36).substring(2, 15);
+              const port = this.context.globalState.get('auth_callback_port', 54321);
+              
+              const authUrl = new URL(message.url);
+              authUrl.searchParams.append('callback_port', port);
+              authUrl.searchParams.append('request_id', requestId);
+              
+              console.log(`Opening external URL with callback: ${authUrl.toString()}`);
+              await vscode.env.openExternal(vscode.Uri.parse(authUrl.toString()));
+              vscode.window.showInformationMessage(`Opening GitHub login page`);
+            } catch (error) {
+              console.error('Error opening external URL:', error);
+              vscode.window.showErrorMessage('Failed to open external URL');
+            }
+          }
+          
+          if (message.type === 'GITHUB_TOKEN') {
+            try {
+              console.log('Received GitHub token:', message.token);
+              this.context.globalState.update('github_token', message.token);
+              vscode.window.showInformationMessage('GitHub login successful!');
+              
+              this.panel.webview.postMessage({ 
+                type: 'EXTENSION_NAVIGATE', 
+                path: '/home' 
+              });
+            } catch (error) {
+              console.error('Error processing GitHub token:', error);
+              vscode.window.showErrorMessage('Failed to process GitHub token');
+            }
+          }
+          
+          if (message.type === 'NAVIGATE') {
+            try {
+              console.log('Navigation request received:', message.path);
+              this.panel.webview.postMessage({ 
+                type: 'EXTENSION_NAVIGATE', 
+                path: message.path 
+              });
+            } catch (error) {
+              console.error('Error handling navigation:', error);
+              vscode.window.showErrorMessage('Failed to navigate');
+            }
+          }
         },
         undefined,
         this.context.subscriptions
@@ -62,21 +115,32 @@ class SidebarProvider {
       
     } catch (error) {
       console.error('Error loading sidebar webview:', error);
-      panel.webview.html = this.getErrorHtml('Error loading webview: ' + error.message);
+      this.panel.webview.html = this.getErrorHtml('Error loading webview: ' + error.message);
+    }
+  }
+
+  notifyTokenReceived(token) {
+    if (this.panel) {
+      this.panel.webview.postMessage({
+        type: 'AUTH_TOKEN_RECEIVED',
+        token: token
+      });
+      
+      this.panel.webview.postMessage({ 
+        type: 'EXTENSION_NAVIGATE', 
+        path: '/home' 
+      });
     }
   }
 
   rewriteHtml(html, webview, frontendDistPath) {
-    // Use regex to find all script and link tags with src/href attributes
     return html.replace(
       /(src|href)="(.*?)"/g,
       (match, attribute, value) => {
-        // Skip absolute URLs or data URIs
         if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('vscode-resource:')) {
           return match;
         }
 
-        // Create a URI for the resource
         const resourcePath = path.join(frontendDistPath, value);
         const uri = webview.asWebviewUri(vscode.Uri.file(resourcePath));
         

@@ -4,7 +4,7 @@ const REDIRECT_URI=process.env.REDIRECT_URI;
 const asyncHandler = require('express-async-handler');
 
 const login = asyncHandler(async (req, res) => {
-    const githubAuthURL = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
+    const githubAuthURL = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=repo`;
     res.redirect(githubAuthURL);
 })
 
@@ -15,10 +15,6 @@ const handleCallback = asyncHandler(async (req, res) => {
     }else{
         try {
             const token = await exchangeCodeForToken(code);
-            // res.status(200).json({
-            //     message:"Token generated successfully!",
-            //     token:token
-            // })
             res.redirect(`http://localhost:5173/#/oauth-success?token=${token}`);
         } catch (error) {
             console.log("Some error occured in the token generation process", error);

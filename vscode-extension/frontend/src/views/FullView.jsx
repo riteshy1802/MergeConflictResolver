@@ -63,9 +63,8 @@ export function FullView() {
     { file: "server.js", action: "Manual Edit", time: "1 hour ago", user: "sarahjohnson" },
   ]
 
-  const totalConflicts = 3 // Total conflicts in current file
+  const totalConflicts = 3
 
-  // Sample code for the conflict panels
   const incomingCode = `function login(username, password) {
   // New implementation with OAuth
   if (!username || !password) {
